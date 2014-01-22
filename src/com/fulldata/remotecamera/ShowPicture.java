@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapFactory.Options;
 import android.graphics.Matrix;
@@ -18,6 +19,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
+import java.lang.Thread;
 
 public class ShowPicture extends Activity {
 
@@ -34,31 +36,35 @@ public class ShowPicture extends Activity {
 
 		{
 			Toast.makeText(getApplicationContext(), "Save to "+Path+" Success", Toast.LENGTH_SHORT).show();			  
-/*
-			        Options options = new Options();  
-  
-			        options.inJustDecodeBounds = true;  
-			        BitmapFactory.decodeFile(Path, options);  
-			        int imageWidth = options.outWidth;  
-			        int imageHeight = options.outHeight;  
 
-			        int windowWidth = iv.getWidth();
-			        int windowHeight = iv.getHeight();
-			  
-			        int scaleX = imageWidth / windowWidth;  
-			        int scaleY = imageHeight / windowHeight;  
-			        int scale = 1;  
-			        if (scaleX >= scaleY && scaleX >= 1) {  
-			            scale = scaleX;  
-			        } else if (scaleY >= scaleX && scaleY >= 1) {  
-			            scale = scaleY;  
-			        }  
+			Bitmap bm = BitmapFactory.decodeFile(Path); 
+//			
+//	        int imageWidth = bm.getWidth();  
+//	        int imageHeight = bm.getHeight();  
+//			
+//	        int windowWidth = iv.getWidth();
+//	        int windowHeight = iv.getHeight();
+//	  
+//	        float scaleX = ((float)windowWidth) / imageWidth;  
+//	        float scaleY = ((float)windowHeight) / imageHeight;  
+//	        Log.v("Scale",""+scaleX+":"+scaleY);
+//	        float scale = scaleX > scaleY ? scaleY : scaleX;
+	        
+//	        if(scale>=1)
+//	        {
+//	        	scale = 1;
+//	        }
+			
+			if(bm!=null)
+			{
+				ByteArrayOutputStream bos = new ByteArrayOutputStream();
+				
+				bm.compress(CompressFormat.JPEG, (int)70, bos);
+				byte[] data = bos.toByteArray(); 
+				Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+				iv.setImageBitmap(bitmap);  
+			}
 
-			        options.inJustDecodeBounds = false;  
-
-			        options.inSampleSize = scale;  */
-			        Bitmap bitmap = BitmapFactory.decodeFile(Path);  
-			        iv.setImageBitmap(bitmap);  
 			  
 		}
 	}

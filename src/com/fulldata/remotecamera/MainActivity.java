@@ -1,6 +1,5 @@
 package com.fulldata.remotecamera;
 
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,11 +17,15 @@ import java.util.Calendar;
 
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -30,136 +33,182 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.Toast;
 
-@SuppressLint("NewApi")
+@SuppressLint({ "NewApi", "HandlerLeak" })
 public class MainActivity extends Activity implements OnClickListener {
 
 	Button btn;
 	EditText TextIp;
 	EditText TextPort;
+	RadioButton BackCamera;
 	RadioButton FrontCamera;
-	
+
 	String DirPath = "/CameraSave";
-	int timeout = 5;
-	
+	int timeout = 5000;
+
+	private Handler handler;
+
+	public Handler getHandler() {
+		return handler;
+	}
+
+	@Override 
+    public boolean onCreateOptionsMenu(Menu menu) { 
+		menu.add(0,0,0,"Exit"); 
+        return super.onCreateOptionsMenu(menu); 
+         
+    } 
+ 
+   @Override
+   public boolean onOptionsItemSelected(MenuItem item) {
+    switch (item.getItemId()) {
+    case 0:
+         finish();
+        return true;
+    default: break;
+    }
+    return false;
+ }
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
-		btn = (Button)findViewById(R.id.buttonConnect);
+
+		btn = (Button) findViewById(R.id.buttonConnect);
 		btn.setOnClickListener(this);
-		
-		TextIp = (EditText)findViewById(R.id.TextIp);
-		TextPort = (EditText)findViewById(R.id.TextPort);
-		
-		FrontCamera = (RadioButton)findViewById(R.id.radioFrontCamera);
+
+		TextIp = (EditText) findViewById(R.id.TextIp);
+		TextPort = (EditText) findViewById(R.id.TextPort);
+
+		FrontCamera = (RadioButton) findViewById(R.id.radioFrontCamera);
+		BackCamera = (RadioButton) findViewById(R.id.radioBackCamera);
 		FrontCamera.setChecked(true);
+
+		handler = new Handler() {
+			public void handleMessage(Message msg) {
+				String message = (String) msg.obj;
+				if (message == "Enable") {
+					SetEnable(true);
+				}
+			}
+		};
 	}
-	
-	public void TakePicture()
-	{
+
+	@Override
+	public void onBackPressed() {
+		// super.onBackPressed();
+		Intent i = new Intent(Intent.ACTION_MAIN);
+		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		i.addCategory(Intent.CATEGORY_HOME);
+		startActivity(i);
+	}
+
+	public void SetEnable(boolean enable) {
+		FrontCamera.setEnabled(enable);
+		BackCamera.setEnabled(enable);
+		btn.setEnabled(enable);
+		TextIp.setEnabled(enable);
+		TextPort.setEnabled(enable);
+	}
+
+	public void TakePicture() {
 		final boolean isFront = this.FrontCamera.isChecked();
 		final String ip = TextIp.getText().toString();
 		final int port = Integer.parseInt(TextPort.getText().toString());
-		
-		if(ip.isEmpty() || (port<=0 || port >=655536) )
-		{
-			Toast.makeText(getApplicationContext(), "Host Setting Error", Toast.LENGTH_LONG).show();
+
+		if (ip.isEmpty() || (port <= 0 || port >= 655536)) {
+			Toast.makeText(getApplicationContext(), "Host Setting Error",
+					Toast.LENGTH_LONG).show();
 			return;
 		}
-		
-		Thread socketHandler = new Thread(new Runnable(){
+
+		SetEnable(false);
+
+		Thread socketHandler = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
-				byte [] data = null;
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				byte[] data = null;
 				try {
 					Socket s = new Socket();
-					SocketAddress sa = new InetSocketAddress(ip,port);
-					s.connect(sa,timeout);
+					SocketAddress sa = new InetSocketAddress(ip, port);
+					s.connect(sa, timeout);
 					InputStream is = s.getInputStream();
 					OutputStream os = s.getOutputStream();
-					byte[] bf_send = new byte[1];
-					if(isFront)
-					{
+					byte[] bf_send = new byte[2];
+					if (isFront) {
 						bf_send[0] = '0';
-					}
-					else
-					{
+					} else {
 						bf_send[0] = '1';
 					}
+					bf_send[1] = '\n';
 					os.write(bf_send);
 					os.flush();
-					
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
 					byte[] buf = new byte[8192];
-					while (is.read(buf)!=-1)
-					{
-						baos.write(buf);
+					while (true) {
+						int len = is.read(buf);
+						if (len == -1)
+							break;
+						baos.write(buf, 0, len);
 					}
-					data  = baos.toByteArray();
+
 					s.close();
-					
-				} catch (UnknownHostException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				} catch (Exception e){
-					
+				} catch (Exception e) {
+					Log.v("Socket", e.getMessage());
 				}
+				data = baos.toByteArray();
+
+				Message message = Message.obtain();
+				message.obj = "Enable";
+				handler.sendMessage(message);
+
 				gotoShowPictureActivity(data);
 			}
-			
+
 		});
-		
+
 		socketHandler.start();
 
 	}
-	
-	public void gotoShowPictureActivity(byte[] data)
-	{
-		if(data==null)
-		{
+
+	public void gotoShowPictureActivity(byte[] data) {
+		if (data == null || data.length == 0) {
 			Looper.prepare();
-			Toast.makeText(getApplicationContext(), "Connect Error", Toast.LENGTH_LONG).show();
+			Toast.makeText(getApplicationContext(), "Connect Error",
+					Toast.LENGTH_LONG).show();
 			Looper.loop();
 			return;
 		}
-		
-		
-		  Calendar c = Calendar.getInstance();
-		  String datestring = "" + c.get(Calendar.YEAR) + 
-		  ( c.get(Calendar.MONTH) + 1) +
-		  c.get(Calendar.DAY_OF_MONTH) +
-		  c.get(Calendar.HOUR_OF_DAY) +
-		  c.get(Calendar.HOUR) +
-		  c.get(Calendar.MINUTE) + 
-		  c.get(Calendar.SECOND); 
-		  
-		  String Path = Environment.getExternalStorageDirectory() + DirPath;
-		  File dir = new File(Path);
-		  dir.mkdirs();
-		  Path += "/" + datestring + ".jpg";
-		  File f = new File(Path);
-		  FileOutputStream fo = null;
-		  try {
-			  fo = new FileOutputStream(f);
-			  fo.write(data);
-			  fo.flush();
+
+		Calendar c = Calendar.getInstance();
+		String datestring = "" + c.get(Calendar.YEAR)
+				+ (c.get(Calendar.MONTH) + 1) + c.get(Calendar.DAY_OF_MONTH)
+				+ c.get(Calendar.HOUR_OF_DAY) + c.get(Calendar.HOUR)
+				+ c.get(Calendar.MINUTE) + c.get(Calendar.SECOND);
+
+		String Path = Environment.getExternalStorageDirectory() + DirPath;
+		File dir = new File(Path);
+		dir.mkdirs();
+		Path += "/" + datestring + ".jpg";
+		File f = new File(Path);
+		FileOutputStream fo = null;
+		try {
+			fo = new FileOutputStream(f);
+			fo.write(data);
+			fo.flush();
 
 		} catch (IOException e) {
 			Log.v("PicSave", e.getMessage());
-		}finally
-		{
+		} finally {
 			try {
-				if(fo!=null)
+				if (fo != null)
 					fo.close();
 			} catch (IOException e) {
 			}
 		}
-		 
-		
-		Intent Intent = new Intent(MainActivity.this,ShowPicture.class);
+
+		Intent Intent = new Intent(MainActivity.this, ShowPicture.class);
 		Intent.putExtra("PICPATH", Path);
 		startActivity(Intent);
 	}
@@ -167,12 +216,12 @@ public class MainActivity extends Activity implements OnClickListener {
 	@Override
 	public void onClick(View arg0) {
 		// TODO Auto-generated method stub
-		switch(arg0.getId())
-		{
+		switch (arg0.getId()) {
 		case R.id.buttonConnect:
 			TakePicture();
 			break;
-		default:break;
+		default:
+			break;
 		}
 	}
 
