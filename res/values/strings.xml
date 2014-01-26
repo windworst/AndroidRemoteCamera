@@ -3,5 +3,6 @@
 
     <string name="app_name">remotecamera</string>
     <string name="action_settings">Settings</string>
+    <drawable name="bkcolor">#000000</drawable>  
 
 </resources>

@@ -1,28 +1,17 @@
 package com.fulldata.remotecamera;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 
-import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -34,13 +23,13 @@ import android.widget.RadioButton;
 import android.widget.Toast;
 
 @SuppressLint({ "NewApi", "HandlerLeak" })
-public class MainActivity extends Activity implements OnClickListener {
+public class CameraClientActivity extends Activity implements OnClickListener {
 
-	Button btn;
-	EditText TextIp;
-	EditText TextPort;
-	RadioButton BackCamera;
-	RadioButton FrontCamera;
+	Button mConnectButton;
+	EditText mIpText;
+	EditText mPortText;
+	RadioButton mBackCameraRadio;
+	RadioButton mFrontCameraRadio;
 
 	String DirPath = "/CameraSave";
 	int timeout = 5000;
@@ -50,8 +39,8 @@ public class MainActivity extends Activity implements OnClickListener {
 			SetEnable(true);
 			Socket s = (Socket) msg.obj;
 			if (s !=null ) {
-				ShowPicture.sSck = s; 
-				Intent intent = new Intent(MainActivity.this,ShowPicture.class);
+				CameraClientView.sSck = s; 
+				Intent intent = new Intent(CameraClientActivity.this,CameraClientView.class);
 				startActivity(intent);
 			}
 			else
@@ -87,15 +76,15 @@ public class MainActivity extends Activity implements OnClickListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		btn = (Button) findViewById(R.id.buttonConnect);
-		btn.setOnClickListener(this);
+		mConnectButton = (Button) findViewById(R.id.buttonConnect);
+		mConnectButton.setOnClickListener(this);
 
-		TextIp = (EditText) findViewById(R.id.TextIp);
-		TextPort = (EditText) findViewById(R.id.TextPort);
+		mIpText = (EditText) findViewById(R.id.TextIp);
+		mPortText = (EditText) findViewById(R.id.TextPort);
 
-		FrontCamera = (RadioButton) findViewById(R.id.radioFrontCamera);
-		BackCamera = (RadioButton) findViewById(R.id.radioBackCamera);
-		FrontCamera.setChecked(true);
+		mFrontCameraRadio = (RadioButton) findViewById(R.id.radioFrontCamera);
+		mBackCameraRadio = (RadioButton) findViewById(R.id.radioBackCamera);
+		mFrontCameraRadio.setChecked(true);
 	}
 
 	@Override
@@ -108,17 +97,17 @@ public class MainActivity extends Activity implements OnClickListener {
 	}
 
 	public void SetEnable(boolean enable) {
-		FrontCamera.setEnabled(enable);
-		BackCamera.setEnabled(enable);
-		btn.setEnabled(enable);
-		TextIp.setEnabled(enable);
-		TextPort.setEnabled(enable);
+		mFrontCameraRadio.setEnabled(enable);
+		mBackCameraRadio.setEnabled(enable);
+		mConnectButton.setEnabled(enable);
+		mIpText.setEnabled(enable);
+		mPortText.setEnabled(enable);
 	}
 
 	public void connectServer() {
-		final boolean isFront = this.FrontCamera.isChecked();
-		final String ip = TextIp.getText().toString();
-		final int port = Integer.parseInt(TextPort.getText().toString());
+		final boolean isFront = this.mFrontCameraRadio.isChecked();
+		final String ip = mIpText.getText().toString();
+		final int port = Integer.parseInt(mPortText.getText().toString());
 
 		if (ip.isEmpty() || (port <= 0 || port >= 655536)) {
 			Toast.makeText(getApplicationContext(), "Host Setting Error",

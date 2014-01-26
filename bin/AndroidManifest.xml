@@ -17,7 +17,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.fulldata.remotecamera.MainActivity"
+            android:name="com.fulldata.remotecamera.CameraClientActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,7 +27,7 @@
         </activity>
         
         <activity 
-            android:name="com.fulldata.remotecamera.ShowPicture"
+            android:name="com.fulldata.remotecamera.CameraClientView"
             android:label="@string/app_name" >
 
         </activity>
