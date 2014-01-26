@@ -45,7 +45,21 @@ public class MainActivity extends Activity implements OnClickListener {
 	String DirPath = "/CameraSave";
 	int timeout = 5000;
 
-	private Handler handler;
+	private Handler handler = new Handler() {
+		public void handleMessage(Message msg) {
+			SetEnable(true);
+			Socket s = (Socket) msg.obj;
+			if (s !=null ) {
+				ShowPicture.sSck = s; 
+				Intent intent = new Intent(MainActivity.this,ShowPicture.class);
+				startActivity(intent);
+			}
+			else
+			{
+				Toast.makeText(getApplicationContext(), "Connect Error", Toast.LENGTH_LONG).show();
+			}
+		}
+	};
 
 	public Handler getHandler() {
 		return handler;
@@ -82,15 +96,6 @@ public class MainActivity extends Activity implements OnClickListener {
 		FrontCamera = (RadioButton) findViewById(R.id.radioFrontCamera);
 		BackCamera = (RadioButton) findViewById(R.id.radioBackCamera);
 		FrontCamera.setChecked(true);
-
-		handler = new Handler() {
-			public void handleMessage(Message msg) {
-				String message = (String) msg.obj;
-				if (message == "Enable") {
-					SetEnable(true);
-				}
-			}
-		};
 	}
 
 	@Override
@@ -110,7 +115,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		TextPort.setEnabled(enable);
 	}
 
-	public void TakePicture() {
+	public void connectServer() {
 		final boolean isFront = this.FrontCamera.isChecked();
 		final String ip = TextIp.getText().toString();
 		final int port = Integer.parseInt(TextPort.getText().toString());
@@ -127,13 +132,11 @@ public class MainActivity extends Activity implements OnClickListener {
 
 			@Override
 			public void run() {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				byte[] data = null;
+				Socket s = null;
 				try {
-					Socket s = new Socket();
+					s = new Socket();
 					SocketAddress sa = new InetSocketAddress(ip, port);
 					s.connect(sa, timeout);
-					InputStream is = s.getInputStream();
 					OutputStream os = s.getOutputStream();
 					byte[] bf_send = new byte[2];
 					if (isFront) {
@@ -145,25 +148,23 @@ public class MainActivity extends Activity implements OnClickListener {
 					os.write(bf_send);
 					os.flush();
 
-					byte[] buf = new byte[8192];
-					while (true) {
-						int len = is.read(buf);
-						if (len == -1)
-							break;
-						baos.write(buf, 0, len);
-					}
-
-					s.close();
 				} catch (Exception e) {
+					if(s!=null)
+					{
+						try {
+							s.close();
+						} catch (IOException e1) {
+						}
+						s = null;
+					}
 					Log.v("Socket", e.getMessage());
 				}
-				data = baos.toByteArray();
 
 				Message message = Message.obtain();
-				message.obj = "Enable";
+				message.obj = s;
 				handler.sendMessage(message);
 
-				gotoShowPictureActivity(data);
+				//gotoShowPictureActivity(data);
 			}
 
 		});
@@ -171,58 +172,57 @@ public class MainActivity extends Activity implements OnClickListener {
 		socketHandler.start();
 
 	}
-
-	public void gotoShowPictureActivity(byte[] data) {
-		if (data == null || data.length == 0) {
-			Looper.prepare();
-			Toast.makeText(getApplicationContext(), "Connect Error",
-					Toast.LENGTH_LONG).show();
-			Looper.loop();
-			return;
-		}
-
-		Calendar c = Calendar.getInstance();
-		String datestring = "" + c.get(Calendar.YEAR)
-				+ (c.get(Calendar.MONTH) + 1) + c.get(Calendar.DAY_OF_MONTH)
-				+ c.get(Calendar.HOUR_OF_DAY) + c.get(Calendar.HOUR)
-				+ c.get(Calendar.MINUTE) + c.get(Calendar.SECOND);
-
-		String Path = Environment.getExternalStorageDirectory() + DirPath;
-		File dir = new File(Path);
-		dir.mkdirs();
-		Path += "/" + datestring + ".jpg";
-		File f = new File(Path);
-		FileOutputStream fo = null;
-		try {
-			fo = new FileOutputStream(f);
-			fo.write(data);
-			fo.flush();
-
-		} catch (IOException e) {
-			Log.v("PicSave", e.getMessage());
-		} finally {
-			try {
-				if (fo != null)
-					fo.close();
-			} catch (IOException e) {
-			}
-		}
-
-		Intent Intent = new Intent(MainActivity.this, ShowPicture.class);
-		Intent.putExtra("PICPATH", Path);
-		startActivity(Intent);
-	}
-
+	
 	@Override
 	public void onClick(View arg0) {
 		// TODO Auto-generated method stub
 		switch (arg0.getId()) {
 		case R.id.buttonConnect:
-			TakePicture();
+			connectServer();
 			break;
 		default:
 			break;
 		}
 	}
 
+//	public void gotoShowPictureActivity(byte[] data) {
+//		if (data == null || data.length == 0) {
+//			Looper.prepare();
+//			Toast.makeText(getApplicationContext(), "Connect Error",
+//					Toast.LENGTH_LONG).show();
+//			Looper.loop();
+//			return;
+//		}
+//
+//		Calendar c = Calendar.getInstance();
+//		String datestring = "" + c.get(Calendar.YEAR)
+//				+ (c.get(Calendar.MONTH) + 1) + c.get(Calendar.DAY_OF_MONTH)
+//				+ c.get(Calendar.HOUR_OF_DAY) + c.get(Calendar.HOUR)
+//				+ c.get(Calendar.MINUTE) + c.get(Calendar.SECOND);
+//
+//		String Path = Environment.getExternalStorageDirectory() + DirPath;
+//		File dir = new File(Path);
+//		dir.mkdirs();
+//		Path += "/" + datestring + ".jpg";
+//		File f = new File(Path);
+//		FileOutputStream fo = null;
+//		try {
+//			fo = new FileOutputStream(f);
+//			fo.write(data);
+//			fo.flush();
+//
+//		} catch (IOException e) {
+//			Log.v("PicSave", e.getMessage());
+//		} finally {
+//			try {
+//				if (fo != null)
+//					fo.close();
+//			} catch (IOException e) {
+//			}
+//		}
+//
+//		Intent Intent = new Intent(MainActivity.this, ShowPicture.class);
+//		Intent.putExtra("PICPATH", Path);
+//		startActivity(Intent);
+//	}
 }
