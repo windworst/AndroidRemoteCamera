@@ -12,11 +12,13 @@ import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class CameraClientView extends Activity {
+public class CameraClientView extends Activity implements OnClickListener {
 
 	static Socket sSck = null;
 	ImageView mIv = null;
@@ -29,9 +31,6 @@ public class CameraClientView extends Activity {
 			if(data!=null)
 			{
 				Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-//				Matrix matrix = new Matrix();
-//				matrix.postRotate(90);
-//				Bitmap bm = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 				mIv.setImageBitmap(bitmap);
 			}
 			else
@@ -87,11 +86,11 @@ public class CameraClientView extends Activity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.show_picture);
-		mIv = (ImageView) findViewById(R.id.imageView1);
+		mIv = (ImageView) findViewById(R.id.CameraImageView);
+		mIv.setOnClickListener(this);
 
 		Runnable r = new Runnable(){
 
@@ -134,6 +133,17 @@ public class CameraClientView extends Activity {
 			sSck = null;
 		}
 		super.onBackPressed();
+	}
+
+	@Override
+	public void onClick(View arg0) {
+		// TODO Auto-generated method stub
+		switch(arg0.getId())
+		{
+		case R.id.CameraImageView:
+			break;
+		default: break;
+		}
 	}
 
 }
