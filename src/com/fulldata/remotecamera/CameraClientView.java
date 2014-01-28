@@ -2,6 +2,7 @@ package com.fulldata.remotecamera;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -67,46 +68,6 @@ public class CameraClientView extends Activity implements OnTouchListener {
 		return handler;
 	}
 	
-	public Object[] recvDataPack(InputStream is)
-	{
-		DataInputStream dis = new DataInputStream(is);
-		try {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			int Sign = dis.readInt();
-			if(Sign!=0XEEFF)
-			{
-				return null;
-			}
-			Integer OperationCode = dis.readInt();
-			int len = dis.readInt();
-			int buf_len = 1024;
-			byte[] data = new byte[buf_len];
-			int i = 0;
-			while(i<len)
-			{
-				int nread = buf_len;
-				if(nread + i > len)
-				{
-					nread = len - i;
-				}
-				nread = dis.read(data, 0, nread);
-				if(nread<=0)
-				{
-					continue;
-				}
-				i+=nread;
-				
-				baos.write(data, 0, nread);
-			}
-			Object[] rets = new Object[2];
-			rets[0] = baos.toByteArray();
-			rets[1] = OperationCode;
-			return rets;
-		} catch (IOException e) {
-		}
-		return null;
-	}
-	
 	public String savetoPic(byte[] data,String Path) {
 		Calendar c = Calendar.getInstance();
 		String datestring = "" + c.get(Calendar.YEAR)
@@ -158,7 +119,7 @@ public class CameraClientView extends Activity implements OnTouchListener {
 						InputStream is = sSck.getInputStream();
 						while(true)
 						{
-							Object[] rets = recvDataPack(is);
+							Object[] rets = DataPack.recvDataPack(is);
 				
 							if(rets!=null) //Handle rets
 							{

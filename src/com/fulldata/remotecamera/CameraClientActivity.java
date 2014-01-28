@@ -1,5 +1,7 @@
 package com.fulldata.remotecamera;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -105,9 +107,12 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 	}
 
 	public void connectServer() {
-		final boolean isFront = this.mFrontCameraRadio.isChecked();
 		final String ip = mIpText.getText().toString();
 		final int port = Integer.parseInt(mPortText.getText().toString());
+		final int CameraMode = this.mFrontCameraRadio.isChecked() ? 0 : 1;
+		final int width = 500;
+		final int height = 500;
+		final int quality = 70;
 
 		if (ip.isEmpty() || (port <= 0 || port >= 655536)) {
 			Toast.makeText(getApplicationContext(), "Host Setting Error",
@@ -127,15 +132,23 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 					SocketAddress sa = new InetSocketAddress(ip, port);
 					s.connect(sa, timeout);
 					OutputStream os = s.getOutputStream();
-					byte[] bf_send = new byte[2];
-					if (isFront) {
-						bf_send[0] = '0';
-					} else {
-						bf_send[0] = '1';
-					}
-					bf_send[1] = '\n';
-					os.write(bf_send);
-					os.flush();
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					DataOutputStream dos = new DataOutputStream(baos);
+					dos.writeInt(CameraMode);
+					dos.writeInt(width);
+					dos.writeInt(height);
+					dos.writeInt(quality);
+					
+					DataPack.sendDataPack(baos.toByteArray(), os, -1);
+//					byte[] bf_send = new byte[2];
+//					if (isFront) {
+//						bf_send[0] = '0';
+//					} else {
+//						bf_send[0] = '1';
+//					}
+//					bf_send[1] = '\n';
+//					os.write(bf_send);
+//					os.flush();
 
 				} catch (Exception e) {
 					if(s!=null)
