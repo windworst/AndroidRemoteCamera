@@ -73,4 +73,13 @@
             android:text="BackCamera" />
     </RadioGroup>
 
+    <Button
+        android:id="@+id/buttonAutoConnect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/buttonConnect"
+        android:layout_below="@+id/buttonConnect"
+        android:layout_marginTop="17dp"
+        android:text="AutoConnect" />
+
 </RelativeLayout>

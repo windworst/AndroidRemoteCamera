@@ -4,9 +4,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -28,6 +31,7 @@ import android.widget.Toast;
 public class CameraClientActivity extends Activity implements OnClickListener {
 
 	Button mConnectButton;
+	Button mAutoConnectButton;
 	EditText mIpText;
 	EditText mPortText;
 	RadioButton mBackCameraRadio;
@@ -39,15 +43,28 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 	private Handler handler = new Handler() {
 		public void handleMessage(Message msg) {
 			SetEnable(true);
-			Socket s = (Socket) msg.obj;
-			if (s !=null ) {
-				CameraClientView.sSck = s; 
-				Intent intent = new Intent(CameraClientActivity.this,CameraClientView.class);
-				startActivity(intent);
+			if (msg.obj instanceof Socket) {
+				Socket s = (Socket) msg.obj;
+				if (s != null) {
+					CameraClientView.sSck = s;
+					Intent intent = new Intent(CameraClientActivity.this,
+							CameraClientView.class);
+					startActivity(intent);
+				} else {
+					Toast.makeText(getApplicationContext(), "Connect Error",
+							Toast.LENGTH_LONG).show();
+				}
 			}
-			else
+			else if(msg.obj instanceof String)
 			{
-				Toast.makeText(getApplicationContext(), "Connect Error", Toast.LENGTH_LONG).show();
+				if((String)msg.obj=="")
+				{
+					Toast.makeText(getApplicationContext(), "Connect Error",
+							Toast.LENGTH_LONG).show();
+					return;
+				}
+				mIpText.setText((String)msg.obj);
+				connectServer();
 			}
 		}
 	};
@@ -56,23 +73,25 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 		return handler;
 	}
 
-	@Override 
-    public boolean onCreateOptionsMenu(Menu menu) { 
-		menu.add(0,0,0,"Exit"); 
-        return super.onCreateOptionsMenu(menu); 
-         
-    } 
- 
-   @Override
-   public boolean onOptionsItemSelected(MenuItem item) {
-    switch (item.getItemId()) {
-    case 0:
-         finish();
-        return true;
-    default: break;
-    }
-    return false;
- }
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		menu.add(0, 0, 0, "Exit");
+		return super.onCreateOptionsMenu(menu);
+
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case 0:
+			finish();
+			return true;
+		default:
+			break;
+		}
+		return false;
+	}
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -80,6 +99,9 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 
 		mConnectButton = (Button) findViewById(R.id.buttonConnect);
 		mConnectButton.setOnClickListener(this);
+
+		mAutoConnectButton = (Button) findViewById(R.id.buttonAutoConnect);
+		mAutoConnectButton.setOnClickListener(this);
 
 		mIpText = (EditText) findViewById(R.id.TextIp);
 		mPortText = (EditText) findViewById(R.id.TextPort);
@@ -102,8 +124,37 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 		mFrontCameraRadio.setEnabled(enable);
 		mBackCameraRadio.setEnabled(enable);
 		mConnectButton.setEnabled(enable);
+		mAutoConnectButton.setEnabled(enable);
 		mIpText.setEnabled(enable);
 		mPortText.setEnabled(enable);
+	}
+
+	public void AutoConnectServer() {
+		final int port = Integer.parseInt(mPortText.getText().toString());
+		SetEnable(false);
+		Thread t = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				try {
+					DatagramSocket ds = new DatagramSocket(port);
+					ds.setSoTimeout(3000);
+					byte[] data = new byte[10];
+					DatagramPacket pack = new DatagramPacket(data, data.length);
+					ds.receive(pack);
+					ds.close();
+					String host = pack.getAddress().toString().substring(1);
+					Message message = Message.obtain();
+					message.obj = host;
+					handler.sendMessage(message);
+				} catch (Exception e) {
+					Message message = Message.obtain();
+					message.obj = "";
+					handler.sendMessage(message);
+				}
+			}
+		});
+		t.start();
 	}
 
 	public void connectServer() {
@@ -138,21 +189,20 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 					dos.writeInt(width);
 					dos.writeInt(height);
 					dos.writeInt(quality);
-					
+
 					DataPack.sendDataPack(baos.toByteArray(), os, -1);
-//					byte[] bf_send = new byte[2];
-//					if (isFront) {
-//						bf_send[0] = '0';
-//					} else {
-//						bf_send[0] = '1';
-//					}
-//					bf_send[1] = '\n';
-//					os.write(bf_send);
-//					os.flush();
+					// byte[] bf_send = new byte[2];
+					// if (isFront) {
+					// bf_send[0] = '0';
+					// } else {
+					// bf_send[0] = '1';
+					// }
+					// bf_send[1] = '\n';
+					// os.write(bf_send);
+					// os.flush();
 
 				} catch (Exception e) {
-					if(s!=null)
-					{
+					if (s != null) {
 						try {
 							s.close();
 						} catch (IOException e1) {
@@ -166,7 +216,7 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 				message.obj = s;
 				handler.sendMessage(message);
 
-				//gotoShowPictureActivity(data);
+				// gotoShowPictureActivity(data);
 			}
 
 		});
@@ -174,57 +224,59 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 		socketHandler.start();
 
 	}
-	
+
 	@Override
 	public void onClick(View arg0) {
-		// TODO Auto-generated method stub
 		switch (arg0.getId()) {
 		case R.id.buttonConnect:
 			connectServer();
+			break;
+		case R.id.buttonAutoConnect:
+			AutoConnectServer();
 			break;
 		default:
 			break;
 		}
 	}
 
-//	public void gotoShowPictureActivity(byte[] data) {
-//		if (data == null || data.length == 0) {
-//			Looper.prepare();
-//			Toast.makeText(getApplicationContext(), "Connect Error",
-//					Toast.LENGTH_LONG).show();
-//			Looper.loop();
-//			return;
-//		}
-//
-//		Calendar c = Calendar.getInstance();
-//		String datestring = "" + c.get(Calendar.YEAR)
-//				+ (c.get(Calendar.MONTH) + 1) + c.get(Calendar.DAY_OF_MONTH)
-//				+ c.get(Calendar.HOUR_OF_DAY) + c.get(Calendar.HOUR)
-//				+ c.get(Calendar.MINUTE) + c.get(Calendar.SECOND);
-//
-//		String Path = Environment.getExternalStorageDirectory() + DirPath;
-//		File dir = new File(Path);
-//		dir.mkdirs();
-//		Path += "/" + datestring + ".jpg";
-//		File f = new File(Path);
-//		FileOutputStream fo = null;
-//		try {
-//			fo = new FileOutputStream(f);
-//			fo.write(data);
-//			fo.flush();
-//
-//		} catch (IOException e) {
-//			Log.v("PicSave", e.getMessage());
-//		} finally {
-//			try {
-//				if (fo != null)
-//					fo.close();
-//			} catch (IOException e) {
-//			}
-//		}
-//
-//		Intent Intent = new Intent(MainActivity.this, ShowPicture.class);
-//		Intent.putExtra("PICPATH", Path);
-//		startActivity(Intent);
-//	}
+	// public void gotoShowPictureActivity(byte[] data) {
+	// if (data == null || data.length == 0) {
+	// Looper.prepare();
+	// Toast.makeText(getApplicationContext(), "Connect Error",
+	// Toast.LENGTH_LONG).show();
+	// Looper.loop();
+	// return;
+	// }
+	//
+	// Calendar c = Calendar.getInstance();
+	// String datestring = "" + c.get(Calendar.YEAR)
+	// + (c.get(Calendar.MONTH) + 1) + c.get(Calendar.DAY_OF_MONTH)
+	// + c.get(Calendar.HOUR_OF_DAY) + c.get(Calendar.HOUR)
+	// + c.get(Calendar.MINUTE) + c.get(Calendar.SECOND);
+	//
+	// String Path = Environment.getExternalStorageDirectory() + DirPath;
+	// File dir = new File(Path);
+	// dir.mkdirs();
+	// Path += "/" + datestring + ".jpg";
+	// File f = new File(Path);
+	// FileOutputStream fo = null;
+	// try {
+	// fo = new FileOutputStream(f);
+	// fo.write(data);
+	// fo.flush();
+	//
+	// } catch (IOException e) {
+	// Log.v("PicSave", e.getMessage());
+	// } finally {
+	// try {
+	// if (fo != null)
+	// fo.close();
+	// } catch (IOException e) {
+	// }
+	// }
+	//
+	// Intent Intent = new Intent(MainActivity.this, ShowPicture.class);
+	// Intent.putExtra("PICPATH", Path);
+	// startActivity(Intent);
+	// }
 }
