@@ -14,12 +14,15 @@ import java.util.Calendar;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -66,6 +69,27 @@ public class CameraClientView extends Activity implements OnTouchListener {
 
 	public Handler getHandler() {
 		return handler;
+	}
+	
+	WakeLock mWakeLock = null;
+	private void acquireWakeLock() {
+
+		if (null == mWakeLock) {
+			PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+			mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK
+					| PowerManager.ON_AFTER_RELEASE, "LOCK");
+			if (null != mWakeLock) {
+				mWakeLock.acquire();
+			}
+		}
+	}
+
+	// 释放设备电源锁
+	private void releaseWakeLock() {
+		if (null != mWakeLock) {
+			mWakeLock.release();
+			mWakeLock = null;
+		}
 	}
 	
 	public String savetoPic(byte[] data,String Path) {
@@ -175,6 +199,14 @@ public class CameraClientView extends Activity implements OnTouchListener {
 		};
 		Thread t = new Thread(r);
 		t.start();
+		
+		acquireWakeLock();
+	}
+	
+	public void onDestroy()
+	{
+		releaseWakeLock();
+		super.onDestroy();
 	}
 	
 	public void RemoteTakePicture()
