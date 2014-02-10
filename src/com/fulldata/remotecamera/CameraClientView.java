@@ -31,13 +31,18 @@ import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView;
 import android.widget.Toast;
 
-public class CameraClientView extends Activity implements OnTouchListener, OnClickListener {
+public class CameraClientView extends Activity implements OnTouchListener, OnClickListener, OnSeekBarChangeListener {
 
 	static Socket sSck = null;
 	ImageView mIv = null;
 	Button mButtonTakePhoto = null;
+	SeekBar mSeekBarQuality = null;
+	TextView mTextViewQuality = null;
 	long mViewClickTime = 0;
 	
 	@SuppressLint("HandlerLeak")
@@ -143,6 +148,13 @@ public class CameraClientView extends Activity implements OnTouchListener, OnCli
 		
 		mButtonTakePhoto = (Button)findViewById(R.id.buttonTakePhoto);
 		mButtonTakePhoto.setOnClickListener(this);
+		
+		mTextViewQuality = (TextView)findViewById(R.id.textViewQuality);
+		mSeekBarQuality = (SeekBar)findViewById(R.id.seekBarQuality);
+		mSeekBarQuality.setOnSeekBarChangeListener(this);
+		
+		setQualityTextView(50);
+		mSeekBarQuality.setProgress(50);
 
 		Runnable r = new Runnable(){
 
@@ -226,9 +238,11 @@ public class CameraClientView extends Activity implements OnTouchListener, OnCli
 			public void run() {
 				try {
 					OutputStream os = sSck.getOutputStream();
-					OutputStreamWriter osw = new OutputStreamWriter(os);
-					osw.write("0");
-					osw.flush();
+					
+					byte[] data = new byte[1];
+					data[0] = (byte)0;
+					os.write(data);
+					os.flush();
 				} catch (Exception e) {
 				}
 			}
@@ -277,6 +291,50 @@ public class CameraClientView extends Activity implements OnTouchListener, OnCli
 			break;
 		default:break;
 		}
+	}
+	
+	void setQualityTextView(int progress)
+	{
+		mTextViewQuality.setText("quality:"+progress+"%");
+	}
+
+	@Override
+	public void onProgressChanged(SeekBar arg0, int arg1, boolean arg2) {
+		// TODO Auto-generated method stub
+		if(arg1<5)
+		{
+			arg1 = 5;
+			arg0.setProgress(arg1);
+		}
+		setQualityTextView(arg1);
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar arg0) {
+		// TODO Auto-generated method stub
+		final int quality = arg0.getProgress();
+		Runnable r = new Runnable(){
+			@Override
+			public void run() {
+				try {
+					OutputStream os = sSck.getOutputStream();
+					
+					byte[] data = new byte[1];
+					data[0] = (byte)quality;
+					os.write(data);
+					os.flush();
+				} catch (Exception e) {
+				}
+			}
+		};
+		Thread t = new Thread(r);
+		t.start();
 	}
 
 }

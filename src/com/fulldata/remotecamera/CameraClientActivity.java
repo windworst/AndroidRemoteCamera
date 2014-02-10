@@ -174,7 +174,7 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 		final int CameraMode = this.mFrontCameraRadio.isChecked() ? 0 : 1;
 		final int width = 500;
 		final int height = 500;
-		final int quality = 70;
+		final int quality = 50;
 
 		if (ip.isEmpty() || (port <= 0 || port >= 65536)) {
 			Toast.makeText(getApplicationContext(), "Host Setting Error",

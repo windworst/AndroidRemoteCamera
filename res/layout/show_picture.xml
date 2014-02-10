@@ -21,14 +21,14 @@
         android:orientation="vertical" >
 
         <TextView
-            android:id="@+id/textView1"
+            android:id="@+id/textViewQuality"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@drawable/textcolor"
             android:text="quality" />
 
         <SeekBar
-            android:id="@+id/seekBar1"
+            android:id="@+id/seekBarQuality"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
              />

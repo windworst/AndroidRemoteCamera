@@ -36,8 +36,8 @@ public final class R {
         public static final int radioBackCamera=0x7f080006;
         public static final int radioFrontCamera=0x7f080005;
         public static final int radioGroup1=0x7f080004;
-        public static final int seekBar1=0x7f080009;
-        public static final int textView1=0x7f080001;
+        public static final int seekBarQuality=0x7f080009;
+        public static final int textViewQuality=0x7f080001;
     }
     public static final class layout {
         public static final int activity_main=0x7f030000;
