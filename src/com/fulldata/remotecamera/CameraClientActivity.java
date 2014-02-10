@@ -172,11 +172,11 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 		final String ip = mIpText.getText().toString();
 		final int port = Integer.parseInt(mPortText.getText().toString());
 		final int CameraMode = this.mFrontCameraRadio.isChecked() ? 0 : 1;
-		final int width = 300;
-		final int height = 300;
-		final int quality = 50;
+		final int width = 500;
+		final int height = 500;
+		final int quality = 70;
 
-		if (ip.isEmpty() || (port <= 0 || port >= 655536)) {
+		if (ip.isEmpty() || (port <= 0 || port >= 65536)) {
 			Toast.makeText(getApplicationContext(), "Host Setting Error",
 					Toast.LENGTH_LONG).show();
 			return;

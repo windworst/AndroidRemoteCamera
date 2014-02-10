@@ -3,6 +3,7 @@
 
     <string name="app_name">控制端</string>
     <string name="action_settings">Settings</string>
-    <drawable name="bkcolor">#000000</drawable>  
+    <drawable name="bkcolor">#000000</drawable>
+    <drawable name="textcolor">#ffffff</drawable>    
 
 </resources>

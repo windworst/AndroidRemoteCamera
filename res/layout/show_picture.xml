@@ -6,11 +6,46 @@
     android:background="@drawable/bkcolor" 
     >
 
-    <ImageView 
+    <ImageView
         android:id="@+id/CameraImageView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        />
+        android:layout_height="wrap_content"
+        android:layout_weight="0.98" />
+
     <!-- android:scaleType="fitXY" -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.02"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@drawable/textcolor"
+            android:text="quality" />
+
+        <SeekBar
+            android:id="@+id/seekBar1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+             />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+             >
+
+            <Button
+                android:id="@+id/buttonTakePhoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@drawable/textcolor"
+                android:text="TakePhoto" />
+        </LinearLayout>
+
+    </LinearLayout>
 
 </LinearLayout>

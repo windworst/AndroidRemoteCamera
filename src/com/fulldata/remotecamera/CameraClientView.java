@@ -26,15 +26,18 @@ import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.Window;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class CameraClientView extends Activity implements OnTouchListener {
+public class CameraClientView extends Activity implements OnTouchListener, OnClickListener {
 
 	static Socket sSck = null;
 	ImageView mIv = null;
+	Button mButtonTakePhoto = null;
 	long mViewClickTime = 0;
 	
 	@SuppressLint("HandlerLeak")
@@ -137,6 +140,9 @@ public class CameraClientView extends Activity implements OnTouchListener {
 		setContentView(R.layout.show_picture);
 		mIv = (ImageView) findViewById(R.id.CameraImageView);
 		mIv.setOnTouchListener(this);
+		
+		mButtonTakePhoto = (Button)findViewById(R.id.buttonTakePhoto);
+		mButtonTakePhoto.setOnClickListener(this);
 
 		Runnable r = new Runnable(){
 
@@ -215,30 +221,21 @@ public class CameraClientView extends Activity implements OnTouchListener {
 	
 	public void RemoteTakePicture()
 	{
-		long currentTime = System.currentTimeMillis();
-		if( currentTime - mViewClickTime > 2000 )
-		{
-			Toast.makeText(getApplicationContext(), "Click twice catch photos", Toast.LENGTH_SHORT).show();
-		}
-		else
-		{
-			Runnable r = new Runnable(){
-				@Override
-				public void run() {
-					try {
-						OutputStream os = sSck.getOutputStream();
-						OutputStreamWriter osw = new OutputStreamWriter(os);
-						osw.write("0");
-						osw.flush();
-					} catch (Exception e) {
-					}
+		Runnable r = new Runnable(){
+			@Override
+			public void run() {
+				try {
+					OutputStream os = sSck.getOutputStream();
+					OutputStreamWriter osw = new OutputStreamWriter(os);
+					osw.write("0");
+					osw.flush();
+				} catch (Exception e) {
 				}
-			};
-			Thread t = new Thread(r);
-			t.start();
-			Toast.makeText(getApplicationContext(), "Take it", Toast.LENGTH_SHORT).show();
-		}
-		mViewClickTime = currentTime;
+			}
+		};
+		Thread t = new Thread(r);
+		t.start();
+		Toast.makeText(getApplicationContext(), "Take it", Toast.LENGTH_SHORT).show();
 	}
 	
 	@Override
@@ -257,10 +254,29 @@ public class CameraClientView extends Activity implements OnTouchListener {
 	@Override
 	public boolean onTouch(View arg0, MotionEvent arg1) {
 		{
-			RemoteTakePicture();
-			Log.v("Touch","Touch");
+			long currentTime = System.currentTimeMillis();
+			if( currentTime - mViewClickTime > 2000 )
+			{
+				Toast.makeText(getApplicationContext(), "Click twice catch photos", Toast.LENGTH_SHORT).show();
+			}
+			else
+			{
+				RemoteTakePicture();
+			}
+			mViewClickTime = currentTime;
 		}
 		return false;
+	}
+
+	@Override
+	public void onClick(View arg0) {
+		switch(arg0.getId())
+		{
+		case R.id.buttonTakePhoto:
+			RemoteTakePicture();
+			break;
+		default:break;
+		}
 	}
 
 }
