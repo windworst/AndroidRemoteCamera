@@ -41,7 +41,11 @@ public class CameraClientView extends Activity implements OnTouchListener {
 	private Handler handler = new Handler() {
 		@SuppressLint("ShowToast")
 		public void handleMessage(Message msg) {
-			if(msg.obj instanceof String)
+			if(msg.obj==null)
+			{
+				finish();
+			}
+			else if(msg.obj instanceof String)
 			{
 				String savePath = (String)msg.obj;
 				if(savePath=="")

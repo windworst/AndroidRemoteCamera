@@ -58,7 +58,7 @@ public class DataPack {
 			rets[0] = baos.toByteArray();
 			rets[1] = OperationCode;
 			return rets;
-		} catch (IOException e) {
+		} catch (Exception e) {
 		}
 		return null;
 	}

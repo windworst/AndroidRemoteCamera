@@ -43,23 +43,25 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 	private Handler handler = new Handler() {
 		public void handleMessage(Message msg) {
 			SetEnable(true);
-			if (msg.obj instanceof Socket) {
+			if(msg.obj==null)
+			{
+				Toast.makeText(getApplicationContext(), "Connect Error",
+						Toast.LENGTH_LONG).show();
+			}
+			else if (msg.obj instanceof Socket) {
 				Socket s = (Socket) msg.obj;
-				if (s != null) {
+				{
 					CameraClientView.sSck = s;
 					Intent intent = new Intent(CameraClientActivity.this,
 							CameraClientView.class);
 					startActivity(intent);
-				} else {
-					Toast.makeText(getApplicationContext(), "Connect Error",
-							Toast.LENGTH_LONG).show();
 				}
 			}
 			else if(msg.obj instanceof String)
 			{
 				if((String)msg.obj=="")
 				{
-					Toast.makeText(getApplicationContext(), "Connect Error",
+					Toast.makeText(getApplicationContext(), "Auto Connect Error",
 							Toast.LENGTH_LONG).show();
 					return;
 				}
@@ -136,14 +138,16 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 			
 			@Override
 			public void run() {
+				DatagramSocket ds = null;
 				try {
-					DatagramSocket ds = new DatagramSocket(port);
+					ds = new DatagramSocket(port);
 					ds.setSoTimeout(3000);
-					byte[] data = new byte[10];
+					byte[] data = new byte[100];
 					DatagramPacket pack = new DatagramPacket(data, data.length);
 					ds.receive(pack);
-					ds.close();
+
 					String host = pack.getAddress().toString().substring(1);
+					
 					Message message = Message.obtain();
 					message.obj = host;
 					handler.sendMessage(message);
@@ -151,6 +155,13 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 					Message message = Message.obtain();
 					message.obj = "";
 					handler.sendMessage(message);
+				}
+				finally
+				{
+					if(ds!=null)
+					{
+						ds.close();
+					}
 				}
 			}
 		});
@@ -161,9 +172,9 @@ public class CameraClientActivity extends Activity implements OnClickListener {
 		final String ip = mIpText.getText().toString();
 		final int port = Integer.parseInt(mPortText.getText().toString());
 		final int CameraMode = this.mFrontCameraRadio.isChecked() ? 0 : 1;
-		final int width = 500;
-		final int height = 500;
-		final int quality = 70;
+		final int width = 300;
+		final int height = 300;
+		final int quality = 50;
 
 		if (ip.isEmpty() || (port <= 0 || port >= 655536)) {
 			Toast.makeText(getApplicationContext(), "Host Setting Error",
